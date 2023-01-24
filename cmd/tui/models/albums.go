@@ -7,11 +7,27 @@ import (
 	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/bunkr-cli/bunkr/cmd/tui/delegate"
+	"github.com/bunkr-cli/bunkr/cmd/tui/messages"
 	"github.com/bunkr-cli/bunkr/cmd/tui/styles"
 	"github.com/bunkr-cli/bunkr/internal/scrape"
 	zone "github.com/lrstanley/bubblezone"
 	"time"
 )
+
+type AlbumsReadyMessage struct {
+	Albums []*scrape.Album
+}
+
+func ListAlbums() tea.Cmd {
+	return func() tea.Msg {
+		albums, err := scrape.DefaultScraper.Albums(false)
+		if err != nil {
+			return messages.NewErrMsg("Failed to fetch albums", err)
+		}
+
+		return AlbumsReadyMessage{Albums: albums}
+	}
+}
 
 type Albums struct {
 	list         list.Model
@@ -30,23 +46,15 @@ func NewAlbums() (tea.Model, error) {
 		delegateKeys: delegateKeys,
 	}
 
-	albums, err := scrape.DefaultScraper.Albums(false)
-	items := make([]list.Item, 0, len(albums))
-	if err != nil {
-		return m, err
-	}
-	for i := range albums {
-		items = append(items, albums[i])
-	}
-
 	delegate := delegate.NewItemDelegate(delegateKeys)
-	albumList := list.New(items, delegate, 0, 0)
-	albumList.Title = "Bunkr Albums"
+	albumList := list.New([]list.Item{}, delegate, 0, 0)
+	albumList.Title = "Fetching Bunkr Albums..."
 	albumList.Styles.Title = styles.TitleStyle
 	albumList.Styles.PaginationStyle = albumList.Styles.StatusBar
 	albumList.Paginator.Type = paginator.Arabic
 	albumList.SetStatusBarItemName("album", "albums")
 	albumList.StatusMessageLifetime = 5 * time.Second
+	albumList.StartSpinner()
 	albumList.AdditionalShortHelpKeys = func() []key.Binding {
 		return []key.Binding{
 			listKeys.downloadAlbum,
@@ -67,7 +75,7 @@ func NewAlbums() (tea.Model, error) {
 }
 
 func (m Albums) Init() tea.Cmd {
-	return tea.EnterAltScreen
+	return tea.Batch(tea.EnterAltScreen, m.list.StartSpinner(), ListAlbums())
 }
 
 func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -133,6 +141,15 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+
+	case AlbumsReadyMessage:
+		items := make([]list.Item, 0, len(msg.Albums))
+		for i := range msg.Albums {
+			items = append(items, msg.Albums[i])
+		}
+		cmds = append(cmds, m.list.SetItems(items))
+		m.list.StopSpinner()
+		m.list.Title = "Bunkr Albums"
 	}
 
 	newListModel, cmd := m.list.Update(msg)

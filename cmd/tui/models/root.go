@@ -2,17 +2,19 @@ package models
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/bunkr-cli/bunkr/cmd/tui/messages"
 )
 
 type Root struct {
-	albums tea.Model
+	main tea.Model
+	w, h int
 }
 
 func NewRoot() (tea.Model, error) {
 	var root Root
 	var err error
 
-	root.albums, err = NewAlbums()
+	root.main, err = NewAlbums()
 	if err != nil {
 		return root, err
 	}
@@ -21,19 +23,29 @@ func NewRoot() (tea.Model, error) {
 }
 
 func (m Root) Init() tea.Cmd {
-	return tea.EnterAltScreen
+	return tea.Batch(tea.EnterAltScreen, m.main.Init())
 }
 
 func (m Root) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.w, m.h = msg.Width, msg.Height
+
+	case messages.ErrMsg:
+		m.main = NewErr(msg.Title(), msg)
+		cmds = append(cmds, m.main.Init(), messages.TriggerSizeMsg(m.w, m.h))
+		return m, tea.Batch(cmds...)
+	}
+
 	var cmd tea.Cmd
-	m.albums, cmd = m.albums.Update(msg)
+	m.main, cmd = m.main.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)
 }
 
 func (m Root) View() string {
-	return m.albums.View()
+	return m.main.View()
 }

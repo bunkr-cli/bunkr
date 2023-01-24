@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/labstack/gommon/log"
 	"io"
 	"net/http"
 	"net/url"
@@ -75,13 +74,10 @@ func (s *Scraper) Albums(force bool) ([]*Album, error) {
 		}
 	}
 
-	log.Infof("Fetching albums...")
 	resp, err := s.Fetch("/albums")
 	if err != nil {
 		return nil, err
 	}
-
-	log.Info("Parsing albums...")
 
 	nextData, err := GetNextData(resp.Body)
 	if err != nil {
@@ -95,7 +91,6 @@ func (s *Scraper) Albums(force bool) ([]*Album, error) {
 	}
 
 	s.AlbumList = page.Props.PageProps.Albums
-	log.Infof("Found %d albums", len(s.AlbumList))
 	s.FetchedAt = time.Now()
 
 	if err := s.Save(); err != nil {
