@@ -2,6 +2,7 @@ package scrape
 
 import (
 	zone "github.com/lrstanley/bubblezone"
+	"github.com/skratchdot/open-golang/open"
 	"net/url"
 )
 
@@ -40,3 +41,7 @@ func (a *Album) Title() string       { return zone.Mark(a.Name, a.Name) }
 func (a *Album) URL() *url.URL       { return BaseUrl.JoinPath("a", a.Identifier) }
 func (a *Album) Description() string { return a.URL().String() }
 func (a *Album) FilterValue() string { return zone.Mark(a.Name, a.Name) }
+
+func (a *Album) Open() error {
+	return open.Run(a.URL().String())
+}

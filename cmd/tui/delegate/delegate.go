@@ -7,7 +7,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/bunkr-cli/bunkr/cmd/tui/styles"
 	"github.com/bunkr-cli/bunkr/internal/scrape"
-	"github.com/skratchdot/open-golang/open"
 )
 
 func NewItemDelegate(keys *DelegateKeyMap) list.DefaultDelegate {
@@ -24,7 +23,7 @@ func NewItemDelegate(keys *DelegateKeyMap) list.DefaultDelegate {
 		case tea.KeyMsg:
 			switch {
 			case key.Matches(msg, keys.open):
-				if err := open.Run(i.URL().String()); err != nil {
+				if err := i.Open(); err != nil {
 					return m.NewStatusMessage(err.Error())
 				}
 				return m.NewStatusMessage(styles.StatusMessageStyle(fmt.Sprintf(`Opening "%s" at %s`, i.Name, i.URL().String())))

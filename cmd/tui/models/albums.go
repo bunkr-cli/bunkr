@@ -143,7 +143,15 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			for i, listItem := range m.list.VisibleItems() {
 				item, _ := listItem.(*scrape.Album)
 				if zone.Get(item.Name).InBounds(msg) {
-					m.list.Select(i)
+					if m.list.SelectedItem() == listItem {
+						if err := item.Open(); err != nil {
+							return m, func() tea.Msg {
+								return messages.NewErrMsg("Unable to open item", err)
+							}
+						}
+					} else {
+						m.list.Select(i)
+					}
 					break
 				}
 			}
