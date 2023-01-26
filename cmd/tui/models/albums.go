@@ -18,9 +18,9 @@ type AlbumsReadyMessage struct {
 	Albums []*scrape.Album
 }
 
-func ListAlbums() tea.Cmd {
+func ListAlbums(force bool) tea.Cmd {
 	return func() tea.Msg {
-		albums, err := scrape.DefaultScraper.Albums(false)
+		albums, err := scrape.DefaultScraper.Albums(force)
 		if err != nil {
 			return messages.NewErrMsg("Failed to fetch albums", err)
 		}
@@ -62,6 +62,7 @@ func NewAlbums() (tea.Model, error) {
 	}
 	albumList.AdditionalFullHelpKeys = func() []key.Binding {
 		return []key.Binding{
+			listKeys.reloadAlbums,
 			listKeys.downloadAlbum,
 			listKeys.toggleTitleBar,
 			listKeys.toggleStatusBar,
@@ -75,7 +76,7 @@ func NewAlbums() (tea.Model, error) {
 }
 
 func (m Albums) Init() tea.Cmd {
-	return tea.Batch(tea.EnterAltScreen, m.list.StartSpinner(), ListAlbums())
+	return tea.Batch(tea.EnterAltScreen, m.list.StartSpinner(), ListAlbums(false))
 }
 
 func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -123,6 +124,12 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.toggleHelpMenu):
 			m.list.SetShowHelp(!m.list.ShowHelp())
 			return m, nil
+
+		case key.Matches(msg, m.keys.reloadAlbums):
+			m.list.Title = "Fetching Bunkr Albums..."
+			cmds = append(cmds, m.list.StartSpinner())
+			cmds = append(cmds, ListAlbums(true))
+			return m, tea.Batch(cmds...)
 		}
 	case tea.MouseMsg:
 		switch msg.Type {
@@ -168,6 +175,7 @@ type listKeyMap struct {
 	toggleStatusBar  key.Binding
 	togglePagination key.Binding
 	toggleHelpMenu   key.Binding
+	reloadAlbums     key.Binding
 	downloadAlbum    key.Binding
 }
 
@@ -189,6 +197,9 @@ func newListKeyMap() *listKeyMap {
 			key.WithKeys("H"),
 			key.WithHelp("H", "toggle help"),
 		),
+		reloadAlbums: key.NewBinding(
+			key.WithKeys("R"),
+			key.WithHelp("R", "reload")),
 		downloadAlbum: key.NewBinding(
 			key.WithKeys("D"),
 			key.WithHelp("D", "download")),
