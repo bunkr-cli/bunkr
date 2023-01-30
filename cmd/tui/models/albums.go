@@ -13,21 +13,6 @@ import (
 	"time"
 )
 
-type AlbumsReadyMessage struct {
-	Albums []*scrape.Album
-}
-
-func ListAlbums(force bool) tea.Cmd {
-	return func() tea.Msg {
-		albums, err := scrape.DefaultScraper.Albums(force)
-		if err != nil {
-			return messages.NewErrMsg("Failed to fetch albums", err)
-		}
-
-		return AlbumsReadyMessage{Albums: albums}
-	}
-}
-
 type Albums struct {
 	list          list.Model
 	keys          *listKeyMap
@@ -76,7 +61,7 @@ func NewAlbums() (tea.Model, error) {
 }
 
 func (m Albums) Init() tea.Cmd {
-	return tea.Batch(tea.EnterAltScreen, m.list.StartSpinner(), ListAlbums(false))
+	return tea.Batch(tea.EnterAltScreen, m.list.StartSpinner(), messages.ListAlbums(false))
 }
 
 func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -131,7 +116,7 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.reloadAlbums):
 			m.list.Title = "Fetching Bunkr Albums..."
 			cmds = append(cmds, m.list.StartSpinner())
-			cmds = append(cmds, ListAlbums(true))
+			cmds = append(cmds, messages.ListAlbums(true))
 			return m, tea.Batch(cmds...)
 		}
 	case tea.MouseMsg:
@@ -160,7 +145,7 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
-	case AlbumsReadyMessage:
+	case messages.AlbumsReadyMsg:
 		items := make([]list.Item, 0, len(msg.Albums))
 		for i := range msg.Albums {
 			items = append(items, msg.Albums[i])
