@@ -101,6 +101,10 @@ func (s *Scraper) Albums(force bool) ([]*Album, error) {
 }
 
 func (s *Scraper) HydrateAlbum(album *Album) error {
+	if album.Hydrated {
+		return nil
+	}
+
 	resp, err := s.Fetch(path.Join("a", album.Identifier))
 	if err != nil {
 		return err
@@ -118,6 +122,7 @@ func (s *Scraper) HydrateAlbum(album *Album) error {
 		return err
 	}
 
+	album.Hydrated = true
 	return nil
 }
 

@@ -29,9 +29,10 @@ func ListAlbums(force bool) tea.Cmd {
 }
 
 type Albums struct {
-	list         list.Model
-	keys         *listKeyMap
-	delegateKeys *delegate.DelegateKeyMap
+	list          list.Model
+	keys          *listKeyMap
+	albumsLoading uint
+	delegateKeys  *delegate.DelegateKeyMap
 }
 
 func NewAlbums() (tea.Model, error) {
@@ -80,6 +81,7 @@ func (m Albums) Init() tea.Cmd {
 
 func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
+	var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -93,16 +95,19 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch {
 		case key.Matches(msg, m.keys.downloadAlbum):
+			if m.albumsLoading == 0 {
+				cmd = m.list.StartSpinner()
+				cmds = append(cmds, cmd)
+			}
+			m.albumsLoading += 1
+
 			i, ok := m.list.SelectedItem().(*scrape.Album)
 			if !ok {
 				return m, nil
 			}
 
-			if err := scrape.DefaultScraper.HydrateAlbum(i); err != nil {
-				return m, nil
-			}
-
-			return m, nil
+			cmds = append(cmds, messages.HydrateAlbum(i))
+			return m, tea.Batch(cmds...)
 
 		case key.Matches(msg, m.keys.toggleTitleBar):
 			v := !m.list.ShowTitle()
@@ -163,10 +168,16 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.list.SetItems(items))
 		m.list.StopSpinner()
 		m.list.Title = "Bunkr Albums"
+
+	case messages.AlbumHydratedMsg:
+		m.albumsLoading -= 1
+		if m.albumsLoading == 0 {
+			m.list.StopSpinner()
+		}
+		return m, nil
 	}
 
-	newListModel, cmd := m.list.Update(msg)
-	m.list = newListModel
+	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return m, tea.Batch(cmds...)

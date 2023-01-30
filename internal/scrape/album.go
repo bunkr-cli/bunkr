@@ -1,9 +1,11 @@
 package scrape
 
 import (
+	"github.com/dustin/go-humanize"
 	zone "github.com/lrstanley/bubblezone"
 	"github.com/skratchdot/open-golang/open"
 	"net/url"
+	"strconv"
 )
 
 type AlbumsPage struct {
@@ -27,6 +29,7 @@ type Album struct {
 	Name       string `json:"name"`
 	Identifier string `json:"identifier"`
 
+	Hydrated  bool   `json:"-"`
 	Enabled   uint8  `json:"enabled"`
 	Public    uint8  `json:"public"`
 	Desc      string `json:"description"`
@@ -37,7 +40,18 @@ type Album struct {
 	Files     []File `json:"files"`
 }
 
-func (a *Album) Title() string       { return zone.Mark(a.Identifier, a.Name) }
+func (a *Album) Title() string {
+	name := a.Name
+	if a.Hydrated {
+		var totalSize uint64
+		for _, file := range a.Files {
+			size, _ := strconv.Atoi(file.Size)
+			totalSize += uint64(size)
+		}
+		name += " - " + strconv.Itoa(len(a.Files)) + " files (" + humanize.Bytes(totalSize) + ")"
+	}
+	return zone.Mark(a.Identifier, name)
+}
 func (a *Album) URL() *url.URL       { return BaseUrl.JoinPath("a", a.Identifier) }
 func (a *Album) Description() string { return a.URL().String() }
 func (a *Album) FilterValue() string { return zone.Mark(a.Identifier, a.Name) }
