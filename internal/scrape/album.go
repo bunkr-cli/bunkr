@@ -37,10 +37,10 @@ type Album struct {
 	Files     []File `json:"files"`
 }
 
-func (a *Album) Title() string       { return zone.Mark(a.Name, a.Name) }
+func (a *Album) Title() string       { return zone.Mark(a.Identifier, a.Name) }
 func (a *Album) URL() *url.URL       { return BaseUrl.JoinPath("a", a.Identifier) }
 func (a *Album) Description() string { return a.URL().String() }
-func (a *Album) FilterValue() string { return zone.Mark(a.Name, a.Name) }
+func (a *Album) FilterValue() string { return zone.Mark(a.Identifier, a.Name) }
 
 func (a *Album) Open() error {
 	return open.Run(a.URL().String())

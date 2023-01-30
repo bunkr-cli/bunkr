@@ -142,7 +142,7 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case tea.MouseLeft:
 			for i, listItem := range m.list.VisibleItems() {
 				item, _ := listItem.(*scrape.Album)
-				if zone.Get(item.Name).InBounds(msg) {
+				if zone.Get(item.Identifier).InBounds(msg) {
 					if m.list.SelectedItem() == listItem {
 						if err := item.Open(); err != nil {
 							return m, func() tea.Msg {
