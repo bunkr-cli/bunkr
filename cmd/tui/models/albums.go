@@ -1,7 +1,6 @@
 package models
 
 import (
-	"fmt"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/paginator"
@@ -103,7 +102,6 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			fmt.Println(i)
 			return m, nil
 
 		case key.Matches(msg, m.keys.toggleTitleBar):
