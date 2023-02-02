@@ -3,6 +3,7 @@ vendor
 bunkr
 scraper.gob.gz
 dist/
+.envrc
 
 # Editor directories and files
 .idea
