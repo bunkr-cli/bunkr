@@ -2,6 +2,7 @@ package scrape
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/gob"
 	"encoding/json"
 	"errors"
@@ -34,7 +35,7 @@ var BaseUrl = &url.URL{
 
 var ErrInvalidStatusCode = errors.New("invalid status code")
 
-func (s *Scraper) Fetch(path string) (*http.Response, error) {
+func (s *Scraper) Fetch(ctx context.Context, path string) (*http.Response, error) {
 	client := &http.Client{}
 	client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		req.Header.Set("User-Agent", UserAgent)
@@ -46,7 +47,7 @@ func (s *Scraper) Fetch(path string) (*http.Response, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("GET", u.String(), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (s *Scraper) Fetch(path string) (*http.Response, error) {
 	return resp, nil
 }
 
-func (s *Scraper) Albums(force bool) ([]*Album, error) {
+func (s *Scraper) Albums(ctx context.Context, force bool) ([]*Album, error) {
 	if !force {
 		if err := s.Load(); err == nil {
 			if time.Since(s.FetchedAt) < time.Hour {
@@ -74,7 +75,7 @@ func (s *Scraper) Albums(force bool) ([]*Album, error) {
 		}
 	}
 
-	resp, err := s.Fetch("/albums")
+	resp, err := s.Fetch(ctx, "/albums")
 	if err != nil {
 		return nil, err
 	}
@@ -100,12 +101,12 @@ func (s *Scraper) Albums(force bool) ([]*Album, error) {
 	return s.AlbumList, nil
 }
 
-func (s *Scraper) HydrateAlbum(album *Album) error {
+func (s *Scraper) HydrateAlbum(ctx context.Context, album *Album) error {
 	if album.Hydrated {
 		return nil
 	}
 
-	resp, err := s.Fetch(path.Join("a", album.Identifier))
+	resp, err := s.Fetch(ctx, path.Join("a", album.Identifier))
 	if err != nil {
 		return err
 	}

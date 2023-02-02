@@ -1,14 +1,15 @@
 package models
 
 import (
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/paginator"
-	tea "github.com/charmbracelet/bubbletea"
+	"context"
 	"github.com/bunkr-cli/bunkr/cmd/tui/delegate"
 	"github.com/bunkr-cli/bunkr/cmd/tui/messages"
 	"github.com/bunkr-cli/bunkr/cmd/tui/styles"
 	"github.com/bunkr-cli/bunkr/internal/scrape"
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/list"
+	"github.com/charmbracelet/bubbles/paginator"
+	tea "github.com/charmbracelet/bubbletea"
 	zone "github.com/lrstanley/bubblezone"
 	"time"
 )
@@ -61,7 +62,7 @@ func NewAlbums() (tea.Model, error) {
 }
 
 func (m Albums) Init() tea.Cmd {
-	return tea.Batch(tea.EnterAltScreen, m.list.StartSpinner(), messages.ListAlbums(false))
+	return tea.Batch(tea.EnterAltScreen, m.list.StartSpinner(), messages.ListAlbums(context.Background(), false))
 }
 
 func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -91,7 +92,7 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 
-			cmds = append(cmds, messages.HydrateAlbum(i))
+			cmds = append(cmds, messages.HydrateAlbum(context.Background(), i))
 			return m, tea.Batch(cmds...)
 
 		case key.Matches(msg, m.keys.toggleTitleBar):
@@ -116,7 +117,7 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case key.Matches(msg, m.keys.reloadAlbums):
 			m.list.Title = "Fetching Bunkr Albums..."
 			cmds = append(cmds, m.list.StartSpinner())
-			cmds = append(cmds, messages.ListAlbums(true))
+			cmds = append(cmds, messages.ListAlbums(context.Background(), true))
 			return m, tea.Batch(cmds...)
 		}
 	case tea.MouseMsg:
