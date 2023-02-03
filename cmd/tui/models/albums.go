@@ -158,11 +158,17 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	prevCursor := m.list.Cursor()
 	prevPage := m.list.Paginator.Page
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 	if m.list.Paginator.Page != prevPage {
 		hydrate = true
+	}
+
+	if m.list.Cursor() != prevCursor {
+		url := m.list.SelectedItem().(*scrape.Album).URL().String()
+		cmds = append(cmds, m.list.NewStatusMessage(url))
 	}
 
 	if hydrate {
