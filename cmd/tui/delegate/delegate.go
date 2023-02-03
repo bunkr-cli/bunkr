@@ -26,11 +26,6 @@ func NewItemDelegate(keys *DelegateKeyMap) list.DefaultDelegate {
 					return m.NewStatusMessage(err.Error())
 				}
 				return m.NewStatusMessage(styles.StatusMessageStyle(fmt.Sprintf(`Opening "%s" at %s`, i.Name, i.URL().String())))
-
-			case key.Matches(msg, keys.toggleURL):
-				d.ShowDescription = !d.ShowDescription
-				m.SetDelegate(d)
-				return m.NewStatusMessage(styles.StatusMessageStyle("Toggled URL"))
 			}
 		}
 
@@ -43,8 +38,7 @@ func NewItemDelegate(keys *DelegateKeyMap) list.DefaultDelegate {
 }
 
 type DelegateKeyMap struct {
-	open      key.Binding
-	toggleURL key.Binding
+	open key.Binding
 }
 
 func (d DelegateKeyMap) ShortHelp() []key.Binding {
@@ -57,7 +51,6 @@ func (d DelegateKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{
 			d.open,
-			d.toggleURL,
 		},
 	}
 }
@@ -67,10 +60,6 @@ func NewDelegateKeyMap() *DelegateKeyMap {
 		open: key.NewBinding(
 			key.WithKeys("enter"),
 			key.WithHelp("enter", "open"),
-		),
-		toggleURL: key.NewBinding(
-			key.WithKeys("U"),
-			key.WithHelp("U", "toggle URL"),
 		),
 	}
 }
