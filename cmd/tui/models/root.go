@@ -1,8 +1,8 @@
 package models
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/bunkr-cli/bunkr/cmd/tui/messages"
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type Root struct {

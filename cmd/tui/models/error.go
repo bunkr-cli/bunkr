@@ -1,10 +1,10 @@
 package models
 
 import (
+	"github.com/bunkr-cli/bunkr/cmd/tui/styles"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/bunkr-cli/bunkr/cmd/tui/styles"
 	"github.com/muesli/reflow/wordwrap"
 )
 

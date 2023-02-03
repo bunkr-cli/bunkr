@@ -2,11 +2,11 @@ package delegate
 
 import (
 	"fmt"
+	"github.com/bunkr-cli/bunkr/cmd/tui/styles"
+	"github.com/bunkr-cli/bunkr/internal/scrape"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/bunkr-cli/bunkr/cmd/tui/styles"
-	"github.com/bunkr-cli/bunkr/internal/scrape"
 )
 
 func NewItemDelegate(keys *DelegateKeyMap) list.DefaultDelegate {
