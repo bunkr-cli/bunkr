@@ -20,6 +20,8 @@ type Albums struct {
 	albumsLoading uint
 	delegateKeys  *delegate.DelegateKeyMap
 
+	cursor        int
+	page          int
 	hydrateCtx    context.Context
 	hydrateCancel context.CancelFunc
 }
@@ -115,10 +117,8 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.Type {
 		case tea.MouseWheelUp:
 			m.list.CursorUp()
-			return m, nil
 		case tea.MouseWheelDown:
 			m.list.CursorDown()
-			return m, nil
 		case tea.MouseLeft:
 			for i, listItem := range m.list.VisibleItems() {
 				item, _ := listItem.(*scrape.Album)
@@ -158,42 +158,51 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
-	prevCursor := m.list.Cursor()
-	prevPage := m.list.Paginator.Page
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
-	if m.list.Paginator.Page != prevPage {
-		hydrate = true
-	}
 
-	if m.list.Cursor() != prevCursor {
-		url := m.list.SelectedItem().(*scrape.Album).URL().String()
-		cmds = append(cmds, m.list.NewStatusMessage(url))
-	}
+	cmds = append(cmds, m.statusMessageUrl())
+	cmds = append(cmds, m.hydrateVisible(hydrate)...)
 
-	if hydrate {
-		if m.albumsLoading == 0 {
-			cmd = m.list.StartSpinner()
-			cmds = append(cmds, cmd)
-		}
-
-		items := m.list.VisibleItems()
-		start, end := m.list.Paginator.GetSliceBounds(len(items))
-		items = items[start:end]
-
-		if m.hydrateCancel != nil {
-			m.hydrateCancel()
-			m.albumsLoading = 0
-		}
-		m.hydrateCtx, m.hydrateCancel = context.WithCancel(context.Background())
-
-		for _, item := range items {
-			m.albumsLoading += 1
-			cmds = append(cmds, messages.HydrateAlbum(m.hydrateCtx, item.(*scrape.Album)))
-		}
-	}
+	m.cursor = m.list.Cursor()
+	m.page = m.list.Paginator.Page
 
 	return m, tea.Batch(cmds...)
+}
+
+func (m *Albums) hydrateVisible(force bool) (cmds []tea.Cmd) {
+	if m.page == m.list.Paginator.Page && !force {
+		return cmds
+	}
+
+	if m.albumsLoading == 0 {
+		cmds = append(cmds, m.list.StartSpinner())
+	}
+
+	items := m.list.VisibleItems()
+	start, end := m.list.Paginator.GetSliceBounds(len(items))
+	items = items[start:end]
+
+	if m.hydrateCancel != nil {
+		m.hydrateCancel()
+		m.albumsLoading = 0
+	}
+	m.hydrateCtx, m.hydrateCancel = context.WithCancel(context.Background())
+
+	for _, item := range items {
+		m.albumsLoading += 1
+		cmds = append(cmds, messages.HydrateAlbum(m.hydrateCtx, item.(*scrape.Album)))
+	}
+
+	return cmds
+}
+
+func (m *Albums) statusMessageUrl() tea.Cmd {
+	if m.list.Cursor() != m.cursor {
+		url := m.list.SelectedItem().(*scrape.Album).URL().String()
+		return m.list.NewStatusMessage(url)
+	}
+	return nil
 }
 
 func (m Albums) View() string {
