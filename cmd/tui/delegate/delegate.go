@@ -11,7 +11,6 @@ import (
 
 func NewItemDelegate(keys *DelegateKeyMap) list.DefaultDelegate {
 	d := list.NewDefaultDelegate()
-	d.ShowDescription = false
 
 	d.UpdateFunc = func(msg tea.Msg, m *list.Model) tea.Cmd {
 		i, ok := m.SelectedItem().(*scrape.Album)

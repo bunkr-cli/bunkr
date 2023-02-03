@@ -19,6 +19,9 @@ type Albums struct {
 	keys          *listKeyMap
 	albumsLoading uint
 	delegateKeys  *delegate.DelegateKeyMap
+
+	hydrateCtx    context.Context
+	hydrateCancel context.CancelFunc
 }
 
 func NewAlbums() (tea.Model, error) {
@@ -69,10 +72,13 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
+	var hydrate bool
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		h, v := styles.AppStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v)
+		hydrate = true
 
 	case tea.KeyMsg:
 		if m.list.FilterState() == list.Filtering {
@@ -80,21 +86,6 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch {
-		case key.Matches(msg, m.keys.downloadAlbum):
-			if m.albumsLoading == 0 {
-				cmd = m.list.StartSpinner()
-				cmds = append(cmds, cmd)
-			}
-			m.albumsLoading += 1
-
-			i, ok := m.list.SelectedItem().(*scrape.Album)
-			if !ok {
-				return m, nil
-			}
-
-			cmds = append(cmds, messages.HydrateAlbum(context.Background(), i))
-			return m, tea.Batch(cmds...)
-
 		case key.Matches(msg, m.keys.toggleTitleBar):
 			v := !m.list.ShowTitle()
 			m.list.SetShowTitle(v)
@@ -154,6 +145,10 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		cmds = append(cmds, m.list.SetItems(items))
 		m.list.StopSpinner()
 		m.list.Title = "Bunkr Albums"
+		hydrate = true
+
+	case list.FilterMatchesMsg:
+		hydrate = true
 
 	case messages.AlbumHydratedMsg:
 		m.albumsLoading -= 1
@@ -163,8 +158,34 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	}
 
+	prevPage := m.list.Paginator.Page
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
+	if m.list.Paginator.Page != prevPage {
+		hydrate = true
+	}
+
+	if hydrate {
+		if m.albumsLoading == 0 {
+			cmd = m.list.StartSpinner()
+			cmds = append(cmds, cmd)
+		}
+
+		items := m.list.VisibleItems()
+		start, end := m.list.Paginator.GetSliceBounds(len(items))
+		items = items[start:end]
+
+		if m.hydrateCancel != nil {
+			m.hydrateCancel()
+			m.albumsLoading = 0
+		}
+		m.hydrateCtx, m.hydrateCancel = context.WithCancel(context.Background())
+
+		for _, item := range items {
+			m.albumsLoading += 1
+			cmds = append(cmds, messages.HydrateAlbum(m.hydrateCtx, item.(*scrape.Album)))
+		}
+	}
 
 	return m, tea.Batch(cmds...)
 }

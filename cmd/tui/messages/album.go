@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/bunkr-cli/bunkr/internal/scrape"
 	tea "github.com/charmbracelet/bubbletea"
+	"time"
 )
 
 type AlbumsReadyMsg struct {
@@ -27,6 +28,9 @@ type AlbumHydratedMsg struct {
 
 func HydrateAlbum(ctx context.Context, album *scrape.Album) tea.Cmd {
 	return func() tea.Msg {
+		ctx, cancel := context.WithTimeout(ctx, time.Minute)
+		defer cancel()
+
 		if err := scrape.DefaultScraper.HydrateAlbum(ctx, album); err != nil {
 			return nil
 		}

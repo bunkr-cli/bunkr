@@ -41,19 +41,22 @@ type Album struct {
 }
 
 func (a *Album) Title() string {
-	name := a.Name
-	if a.Hydrated {
-		var totalSize uint64
-		for _, file := range a.Files {
-			size, _ := strconv.Atoi(file.Size)
-			totalSize += uint64(size)
-		}
-		name += " - " + strconv.Itoa(len(a.Files)) + " files (" + humanize.Bytes(totalSize) + ")"
-	}
-	return zone.Mark(a.Identifier, name)
+	return zone.Mark(a.Identifier, a.Name)
 }
-func (a *Album) URL() *url.URL       { return BaseUrl.JoinPath("a", a.Identifier) }
-func (a *Album) Description() string { return a.URL().String() }
+func (a *Album) URL() *url.URL { return BaseUrl.JoinPath("a", a.Identifier) }
+func (a *Album) Description() string {
+	if !a.Hydrated {
+		return ""
+	}
+
+	var totalSize uint64
+	for _, file := range a.Files {
+		size, _ := strconv.Atoi(file.Size)
+		totalSize += uint64(size)
+	}
+	return strconv.Itoa(len(a.Files)) + " files (" + humanize.Bytes(totalSize) + ")"
+
+}
 func (a *Album) FilterValue() string { return zone.Mark(a.Identifier, a.Name) }
 
 func (a *Album) Open() error {
