@@ -26,15 +26,26 @@ type AlbumHydratedMsg struct {
 	Album *scrape.Album
 }
 
+var hydrateTries = 5
+
 func HydrateAlbum(ctx context.Context, album *scrape.Album) tea.Cmd {
 	return func() tea.Msg {
 		ctx, cancel := context.WithTimeout(ctx, time.Minute)
 		defer cancel()
 
-		if err := scrape.DefaultScraper.HydrateAlbum(ctx, album); err != nil {
-			return nil
+		for i := 1; i <= hydrateTries; i += 1 {
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
+				err := scrape.DefaultScraper.HydrateAlbum(ctx, album)
+				if err == nil {
+					return AlbumHydratedMsg{Album: album}
+				}
+				time.Sleep(time.Duration(i) * 2 * time.Second)
+			}
 		}
 
-		return AlbumHydratedMsg{Album: album}
+		return nil
 	}
 }
