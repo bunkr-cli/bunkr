@@ -45,8 +45,9 @@ func (a *Album) Title() string {
 }
 func (a *Album) URL() *url.URL { return BaseUrl.JoinPath("a", a.Identifier) }
 func (a *Album) Description() string {
+	description := a.URL().String()
 	if !a.Hydrated {
-		return ""
+		return description
 	}
 
 	var totalSize uint64
@@ -54,7 +55,8 @@ func (a *Album) Description() string {
 		size, _ := strconv.Atoi(file.Size)
 		totalSize += uint64(size)
 	}
-	return strconv.Itoa(len(a.Files)) + " files (" + humanize.Bytes(totalSize) + ")"
+	description += "  " + strconv.Itoa(len(a.Files)) + " files (" + humanize.Bytes(totalSize) + ")"
+	return description
 
 }
 func (a *Album) FilterValue() string { return zone.Mark(a.Identifier, a.Name) }

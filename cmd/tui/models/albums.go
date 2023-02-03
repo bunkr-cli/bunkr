@@ -20,7 +20,6 @@ type Albums struct {
 	albumsLoading uint
 	delegateKeys  *delegate.DelegateKeyMap
 
-	cursor        int
 	page          int
 	hydrateCtx    context.Context
 	hydrateCancel context.CancelFunc
@@ -161,10 +160,7 @@ func (m Albums) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.list, cmd = m.list.Update(msg)
 	cmds = append(cmds, cmd)
 
-	cmds = append(cmds, m.statusMessageUrl())
 	cmds = append(cmds, m.hydrateVisible(hydrate)...)
-
-	m.cursor = m.list.Cursor()
 	m.page = m.list.Paginator.Page
 
 	return m, tea.Batch(cmds...)
@@ -195,14 +191,6 @@ func (m *Albums) hydrateVisible(force bool) (cmds []tea.Cmd) {
 	}
 
 	return cmds
-}
-
-func (m *Albums) statusMessageUrl() tea.Cmd {
-	if m.list.Cursor() != m.cursor {
-		url := m.list.SelectedItem().(*scrape.Album).URL().String()
-		return m.list.NewStatusMessage(url)
-	}
-	return nil
 }
 
 func (m Albums) View() string {
