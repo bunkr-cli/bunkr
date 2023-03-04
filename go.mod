@@ -8,7 +8,7 @@ require (
 	github.com/charmbracelet/bubbletea v0.23.1
 	github.com/charmbracelet/lipgloss v0.6.0
 	github.com/dustin/go-humanize v1.0.1
-	github.com/lrstanley/bubblezone v0.0.0-20221222153816-e95291e2243e
+	github.com/lrstanley/bubblezone v0.0.0-20230303230241-08f906ff62a9
 	github.com/muesli/reflow v0.3.0
 	github.com/skratchdot/open-golang v0.0.0-20200116055534-eef842397966
 	github.com/spf13/cobra v1.6.1
